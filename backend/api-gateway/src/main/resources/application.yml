@@ -23,6 +23,15 @@ spring:
           uri: lb://booking-service
           predicates:
             - Path=/api/bookings/**
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payments/**
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/spacedrop
 
 eureka:
   client:

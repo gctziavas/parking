@@ -17,6 +17,36 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: spacedrop-keycloak
+    ports:
+      - "8180:8080"
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/spacedrop_keycloak
+      KC_DB_USERNAME: spacedrop
+      KC_DB_PASSWORD: spacedrop
+    command: start-dev --import-realm
+    volumes:
+      - ./keycloak/spacedrop-realm.json:/opt/keycloak/data/import/spacedrop-realm.json
+    depends_on:
+      - postgres-keycloak
+
+  postgres-keycloak:
+    image: postgres:16-alpine
+    container_name: spacedrop-postgres-keycloak
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: spacedrop_keycloak
+      POSTGRES_USER: spacedrop
+      POSTGRES_PASSWORD: spacedrop
+    volumes:
+      - postgres-keycloak-data:/var/lib/postgresql/data
+
   postgres-users:
     image: postgres:16-alpine
     container_name: spacedrop-postgres-users
@@ -53,7 +83,21 @@ services:
     volumes:
       - postgres-booking-data:/var/lib/postgresql/data
 
+  postgres-payment:
+    image: postgres:16-alpine
+    container_name: spacedrop-postgres-payment
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_DB: spacedrop_payment
+      POSTGRES_USER: spacedrop
+      POSTGRES_PASSWORD: spacedrop
+    volumes:
+      - postgres-payment-data:/var/lib/postgresql/data
+
 volumes:
+  postgres-keycloak-data:
   postgres-users-data:
   postgres-parking-data:
   postgres-booking-data:
+  postgres-payment-data:
