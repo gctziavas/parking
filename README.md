@@ -117,6 +117,7 @@ The web UI integrates with Keycloak for authentication and proxies API requests 
 - **Service Discovery**: Netflix Eureka
 - **API Gateway**: Spring Cloud Gateway + OAuth2 Resource Server
 - **API Documentation**: SpringDoc OpenAPI (Swagger UI)
+- **Observability**: OpenTelemetry, Micrometer, Grafana Tempo, Prometheus, Grafana
 - **Database**: PostgreSQL (production), H2 (development)
 - **Web UI**: React 19, Vite, React Router, keycloak-js
 - **Mobile**: React Native with Expo
@@ -131,17 +132,42 @@ The web UI integrates with Keycloak for authentication and proxies API requests 
 - Node.js 18+
 - Docker & Docker Compose
 
-### Start Infrastructure
+### Option 1: Run Everything with Docker Compose
+
+Build the backend JARs first, then start the entire stack:
 
 ```bash
-docker compose up -d
+cd backend
+mvn clean package -DskipTests
+
+cd ..
+docker compose up -d --build
 ```
 
-This starts Kafka (KRaft mode), Keycloak, and PostgreSQL databases.
+This starts all services, databases, Keycloak, and the full observability stack.
+
+| Component | URL |
+|-----------|-----|
+| **Web UI** | http://localhost:3000 |
+| **API Gateway** | http://localhost:8080 |
+| **Eureka Dashboard** | http://localhost:8761 |
+| **Keycloak Admin** | http://localhost:8180 (admin / admin) |
+| **Grafana** | http://localhost:3100 (admin / admin) |
+| **Prometheus** | http://localhost:9090 |
+
+### Option 2: Run Locally (Development)
+
+#### Start Infrastructure
+
+```bash
+docker compose up -d kafka postgres-users postgres-parking postgres-booking postgres-payment postgres-keycloak keycloak otel-collector tempo prometheus grafana
+```
+
+This starts Kafka (KRaft mode), Keycloak, PostgreSQL databases, and the observability stack.
 
 Keycloak admin console is available at http://localhost:8180 (admin / admin).
 
-### Build & Run Backend
+#### Build & Run Backend
 
 ```bash
 cd backend
@@ -162,7 +188,7 @@ cd ../notification-service && mvn spring-boot:run &
 cd ../payment-service && mvn spring-boot:run &
 ```
 
-### Run Web UI
+#### Run Web UI
 
 ```bash
 cd web-ui
@@ -238,3 +264,57 @@ Each microservice exposes an interactive **Swagger UI** and an OpenAPI 3.0 spec.
 | **Payment Service** | http://localhost:8085/swagger-ui.html | http://localhost:8085/v3/api-docs |
 
 The gateway Swagger UI lets you switch between services using the dropdown at the top of the page.
+
+## Observability
+
+The platform includes a full observability stack for distributed tracing, metrics, and dashboards — helping collect and analyze data about users, parking owners, bookings, and payments.
+
+### Stack
+
+| Component | Port | Purpose |
+|-----------|------|---------|
+| **OpenTelemetry Collector** | 4317 (gRPC), 4318 (HTTP) | Receives traces and metrics from all services |
+| **Grafana Tempo** | 3200 | Distributed trace storage and querying |
+| **Prometheus** | 9090 | Metrics scraping and storage |
+| **Grafana** | 3100 | Dashboards and visualization |
+
+### How It Works
+
+- All services use **Micrometer Tracing** with the **OpenTelemetry bridge** to export traces and metrics via OTLP
+- Each service exposes a `/actuator/prometheus` endpoint for Prometheus scraping
+- Log correlation is enabled — every log line includes `[service-name, traceId, spanId]`
+- The **OTel Collector** receives telemetry and forwards traces to Tempo and metrics to Prometheus
+- **Grafana** provides pre-configured datasources for Prometheus and Tempo
+
+### Accessing Dashboards
+
+- **Grafana**: http://localhost:3100 (admin / admin) — Explore traces, create dashboards
+- **Prometheus**: http://localhost:9090 — Query raw metrics
+- **Tempo**: http://localhost:3200 — Trace search API
+
+## Docker
+
+All services are fully dockerized. Each backend service has a `Dockerfile` and the web UI uses a multi-stage build with nginx.
+
+### Build & Run
+
+```bash
+# Build JARs first
+cd backend && mvn clean package -DskipTests && cd ..
+
+# Start everything
+docker compose up -d --build
+```
+
+### Service Images
+
+| Service | Base Image | Port |
+|---------|-----------|------|
+| discovery-service | eclipse-temurin:17-jre-alpine | 8761 |
+| api-gateway | eclipse-temurin:17-jre-alpine | 8080 |
+| user-service | eclipse-temurin:17-jre-alpine | 8081 |
+| parking-service | eclipse-temurin:17-jre-alpine | 8082 |
+| booking-service | eclipse-temurin:17-jre-alpine | 8083 |
+| notification-service | eclipse-temurin:17-jre-alpine | 8084 |
+| payment-service | eclipse-temurin:17-jre-alpine | 8085 |
+| web-ui | node:18-alpine (build) + nginx:alpine | 3000 |
