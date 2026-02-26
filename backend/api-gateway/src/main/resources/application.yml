@@ -15,23 +15,59 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/api/users/**
+        - id: user-service-docs
+          uri: lb://user-service
+          predicates:
+            - Path=/user-service/v3/api-docs/**
+          filters:
+            - StripPrefix=1
         - id: parking-service
           uri: lb://parking-service
           predicates:
             - Path=/api/parking/**
+        - id: parking-service-docs
+          uri: lb://parking-service
+          predicates:
+            - Path=/parking-service/v3/api-docs/**
+          filters:
+            - StripPrefix=1
         - id: booking-service
           uri: lb://booking-service
           predicates:
             - Path=/api/bookings/**
+        - id: booking-service-docs
+          uri: lb://booking-service
+          predicates:
+            - Path=/booking-service/v3/api-docs/**
+          filters:
+            - StripPrefix=1
         - id: payment-service
           uri: lb://payment-service
           predicates:
             - Path=/api/payments/**
+        - id: payment-service-docs
+          uri: lb://payment-service
+          predicates:
+            - Path=/payment-service/v3/api-docs/**
+          filters:
+            - StripPrefix=1
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8180/realms/spacedrop
+
+springdoc:
+  swagger-ui:
+    urls:
+      - name: User Service
+        url: /user-service/v3/api-docs
+      - name: Parking Service
+        url: /parking-service/v3/api-docs
+      - name: Booking Service
+        url: /booking-service/v3/api-docs
+      - name: Payment Service
+        url: /payment-service/v3/api-docs
 
 eureka:
   client:

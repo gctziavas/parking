@@ -116,6 +116,7 @@ The web UI integrates with Keycloak for authentication and proxies API requests 
 - **Authentication**: Keycloak (OAuth2 / OpenID Connect)
 - **Service Discovery**: Netflix Eureka
 - **API Gateway**: Spring Cloud Gateway + OAuth2 Resource Server
+- **API Documentation**: SpringDoc OpenAPI (Swagger UI)
 - **Database**: PostgreSQL (production), H2 (development)
 - **Web UI**: React 19, Vite, React Router, keycloak-js
 - **Mobile**: React Native with Expo
@@ -223,3 +224,17 @@ npx expo start
 - `GET /api/payments/user/{userId}` — Get payments by user
 - `PUT /api/payments/{id}/complete` — Complete a payment
 - `PUT /api/payments/{id}/refund` — Refund a payment
+
+## API Documentation (Swagger)
+
+Each microservice exposes an interactive **Swagger UI** and an OpenAPI 3.0 spec. The API Gateway aggregates all service docs into a single Swagger UI.
+
+| Service | Swagger UI | OpenAPI JSON |
+|---------|-----------|-------------|
+| **Gateway (aggregated)** | http://localhost:8080/swagger-ui.html | — |
+| **User Service** | http://localhost:8081/swagger-ui.html | http://localhost:8081/v3/api-docs |
+| **Parking Service** | http://localhost:8082/swagger-ui.html | http://localhost:8082/v3/api-docs |
+| **Booking Service** | http://localhost:8083/swagger-ui.html | http://localhost:8083/v3/api-docs |
+| **Payment Service** | http://localhost:8085/swagger-ui.html | http://localhost:8085/v3/api-docs |
+
+The gateway Swagger UI lets you switch between services using the dropdown at the top of the page.
