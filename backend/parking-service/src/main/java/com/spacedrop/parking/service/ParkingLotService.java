@@ -58,7 +58,12 @@ public class ParkingLotService {
     public ParkingLot updateParkingLot(Long id, ParkingLot updated) {
         return parkingLotRepository.findById(id).map(lot -> {
             lot.setName(updated.getName());
-            lot.setAddress(updated.getAddress());
+            lot.setCountry(updated.getCountry());
+            lot.setState(updated.getState());
+            lot.setCity(updated.getCity());
+            lot.setZipCode(updated.getZipCode());
+            lot.setStreetName(updated.getStreetName());
+            lot.setStreetNumber(updated.getStreetNumber());
             lot.setLatitude(updated.getLatitude());
             lot.setLongitude(updated.getLongitude());
             lot.setTotalSpots(updated.getTotalSpots());
