@@ -22,6 +22,11 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/spacedrop
 
 eureka:
   client:
@@ -46,6 +51,14 @@ management:
       export:
         endpoint: http://localhost:4318/v1/metrics
         step: 10s
+
+spring.ai:
+  mcp:
+    server:
+      name: user-service-mcp
+      version: 1.0.0
+      type: SYNC
+      sse-message-endpoint: /mcp/messages
 
 logging:
   pattern:

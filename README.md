@@ -4,7 +4,7 @@
 
 ## Architecture
 
-The platform is built on a microservices architecture using **Spring Boot** (Java 17) for the backend, **Apache Kafka** (KRaft mode, no Zookeeper) for inter-service communication, **Keycloak** for OAuth2 authentication, **React Native** (Expo) for mobile apps, and **React** (Vite) for the web UI.
+The platform is built on a microservices architecture using **Spring Boot** (Java 21) for the backend, **Apache Kafka** (KRaft mode, no Zookeeper) for inter-service communication, **Keycloak** for OAuth2 authentication, **React Native** (Expo) for mobile apps, and **React** (Vite) for the web UI. All services are **MCP-enabled** (Model Context Protocol) for AI agent integration.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
@@ -70,6 +70,50 @@ The platform is built on a microservices architecture using **Spring Boot** (Jav
 - `booking-events` — Booking lifecycle events (created, confirmed, cancelled, completed)
 - `payment-events` — Payment processing events (initiated, completed, failed, refunded)
 
+## MCP (Model Context Protocol) Support
+
+SpaceDrop is **agentic-ready** with MCP servers embedded in each service, enabling AI agents to interact with the platform programmatically.
+
+### MCP Endpoints
+
+Each service exposes an MCP SSE endpoint at `/mcp/messages`:
+
+| Service | MCP Endpoint | Available Tools |
+|---------|--------------|-----------------|
+| **User Service** | http://localhost:8081/mcp/messages | getUserById, getUserByEmail, getAllUsers, getUsersByRole |
+| **Parking Service** | http://localhost:8082/mcp/messages | searchAvailableParking, findNearbyParking, searchParkingByCity, getParkingLotDetails |
+| **Booking Service** | http://localhost:8083/mcp/messages | createBooking, getUserBookings, confirmBooking, cancelBooking, completeBooking |
+| **Payment Service** | http://localhost:8085/mcp/messages | initiatePayment, getPaymentById, getUserPayments, completePayment, refundPayment |
+
+### MCP Role-Based Access Control (RBAC)
+
+MCP tools are secured with JWT-based RBAC using Keycloak roles. Each tool requires specific roles:
+
+| Tool | Required Role(s) |
+|------|-----------------|
+| **User Service** | |
+| getUserById, getUserByEmail, getAllUsers, getUsersByRole, userExistsByEmail | ADMIN |
+| **Parking Service** | |
+| searchAvailableParking, getAllActiveParkingLots, getParkingLotDetails, searchParkingByCity, findNearbyParking | USER, OWNER, ADMIN |
+| getParkingLotsByOwner | OWNER, ADMIN |
+| **Booking Service** | |
+| createBooking, getBookingDetails, getUserBookings, confirmBooking, cancelBooking, completeBooking | USER, ADMIN |
+| getParkingLotBookings | OWNER, ADMIN |
+| **Payment Service** | |
+| getPaymentById, getPaymentByBookingId, getUserPayments, initiatePayment | USER, ADMIN |
+| completePayment, failPayment, refundPayment | ADMIN |
+
+AI agents must include a valid JWT Bearer token in requests with appropriate roles from the Keycloak `realm_access.roles` claim.
+
+### Parking Lot Features
+
+The Parking Service supports advanced parking lot management:
+
+- **Flexible Addressing**: Split address fields (country, state, city, zip code, street name, number)
+- **Pricing Tiers**: Tiered pricing bundles (e.g., $5/hr for first 3 hours, $20 all-day)
+- **Operating Hours**: Per-day schedules with open/close times or 24-hour operation
+- **Car Cleaning Services**: Three tiers available — Inside, Outside, or Inside + Outside
+
 ## Authentication (Keycloak)
 
 SpaceDrop uses **Keycloak** as an OAuth2 / OpenID Connect identity provider. The API Gateway acts as an OAuth2 Resource Server, validating JWT tokens issued by Keycloak.
@@ -111,7 +155,8 @@ The web UI integrates with Keycloak for authentication and proxies API requests 
 
 ## Tech Stack
 
-- **Backend**: Java 17, Spring Boot 3.2, Spring Cloud 2023.0
+- **Backend**: Java 21, Spring Boot 3.5, Spring Cloud 2025.0, Spring AI 1.0
+- **AI Integration**: Model Context Protocol (MCP) servers on each service
 - **Messaging**: Apache Kafka (KRaft mode — no Zookeeper)
 - **Authentication**: Keycloak (OAuth2 / OpenID Connect)
 - **Service Discovery**: Netflix Eureka
@@ -127,7 +172,7 @@ The web UI integrates with Keycloak for authentication and proxies API requests 
 
 ### Prerequisites
 
-- Java 17+
+- Java 21+
 - Maven 3.8+
 - Node.js 18+
 - Docker & Docker Compose
@@ -310,11 +355,11 @@ docker compose up -d --build
 
 | Service | Base Image | Port |
 |---------|-----------|------|
-| discovery-service | eclipse-temurin:17-jre-alpine | 8761 |
-| api-gateway | eclipse-temurin:17-jre-alpine | 8080 |
-| user-service | eclipse-temurin:17-jre-alpine | 8081 |
-| parking-service | eclipse-temurin:17-jre-alpine | 8082 |
-| booking-service | eclipse-temurin:17-jre-alpine | 8083 |
-| notification-service | eclipse-temurin:17-jre-alpine | 8084 |
-| payment-service | eclipse-temurin:17-jre-alpine | 8085 |
+| discovery-service | eclipse-temurin:21-jre-alpine | 8761 |
+| api-gateway | eclipse-temurin:21-jre-alpine | 8080 |
+| user-service | eclipse-temurin:21-jre-alpine | 8081 |
+| parking-service | eclipse-temurin:21-jre-alpine | 8082 |
+| booking-service | eclipse-temurin:21-jre-alpine | 8083 |
+| notification-service | eclipse-temurin:21-jre-alpine | 8084 |
+| payment-service | eclipse-temurin:21-jre-alpine | 8085 |
 | web-ui | node:18-alpine (build) + nginx:alpine | 3000 |
